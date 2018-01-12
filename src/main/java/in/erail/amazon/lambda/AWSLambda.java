@@ -18,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static in.erail.common.FrameworkConstants.RoutingContext.Json.*;
 
 /**
  *
@@ -67,23 +68,23 @@ public class AWSLambda implements RequestStreamHandler {
 
   public JsonObject transform(JsonObject pMsg) {
 
-    if (!pMsg.containsKey("isBase64Encoded")) {
-      pMsg.put("isBase64Encoded", Boolean.FALSE);
+    if (!pMsg.containsKey(IS_BASE64_ENCODED)) {
+      pMsg.put(IS_BASE64_ENCODED, Boolean.FALSE);
     }
 
-    if (!pMsg.containsKey("statusCode")) {
-      pMsg.put("statusCode", "200");
+    if (!pMsg.containsKey(STATUS_CODE)) {
+      pMsg.put(STATUS_CODE, "200");
     }
 
-    if (!pMsg.containsKey("headers")) {
-      pMsg.put("headers", new JsonObject());
+    if (!pMsg.containsKey(HEADERS)) {
+      pMsg.put(HEADERS, new JsonObject());
     }
 
-    if (!pMsg.containsKey("body")) {
-      pMsg.put("body", new JsonObject().toString());
+    if (!pMsg.containsKey(BODY)) {
+      pMsg.put(BODY, new JsonObject().toString());
     } else {
-      String body = pMsg.getValue("body").toString();
-      pMsg.put("body", body);
+      String body = pMsg.getValue(BODY).toString();
+      pMsg.put(BODY, body);
     }
 
     return pMsg;
