@@ -2,6 +2,7 @@ package in.erail.amazon.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import in.erail.glue.Glue;
 import in.erail.service.RESTService;
@@ -26,10 +27,16 @@ import static in.erail.common.FrameworkConstants.RoutingContext.Json.*;
  */
 public class AWSLambda implements RequestStreamHandler {
 
+  private static final String SERVICE_ENV = "SERVICE";
+  private static final String SERVICE_SYS_PROP = "service";
   private final RESTService mService;
 
-  public AWSLambda(String pComponent) {
-    mService = Glue.instance().resolve(pComponent);
+  public AWSLambda() {
+    String component = System.getenv(SERVICE_ENV);
+    if (Strings.isNullOrEmpty(component)) {
+      component = System.getProperty(SERVICE_SYS_PROP);
+    }
+    mService = Glue.instance().resolve(component);
   }
 
   @Override
