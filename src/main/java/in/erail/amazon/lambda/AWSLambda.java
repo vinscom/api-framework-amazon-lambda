@@ -75,9 +75,7 @@ public class AWSLambda implements RequestStreamHandler {
 
   public JsonObject transform(JsonObject pMsg) {
 
-    if (!pMsg.containsKey(IS_BASE64_ENCODED)) {
-      pMsg.put(IS_BASE64_ENCODED, Boolean.FALSE);
-    }
+    pMsg.put(IS_BASE64_ENCODED, Boolean.TRUE);
 
     if (!pMsg.containsKey(STATUS_CODE)) {
       pMsg.put(STATUS_CODE, "200");
@@ -87,11 +85,10 @@ public class AWSLambda implements RequestStreamHandler {
       pMsg.put(HEADERS, new JsonObject());
     }
 
-    if (!pMsg.containsKey(BODY)) {
-      pMsg.put(BODY, new JsonObject().toString());
+    if (pMsg.containsKey(BODY)) {
+      pMsg.put(BODY, pMsg.getString(BODY));
     } else {
-      String body = pMsg.getValue(BODY).toString();
-      pMsg.put(BODY, body);
+      pMsg.put(BODY, "");
     }
 
     return pMsg;
