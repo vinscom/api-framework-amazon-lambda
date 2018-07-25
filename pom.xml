@@ -11,6 +11,12 @@
             <name>vinscom</name>
         </developer>
     </developers>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <api.framework.version>2.3-SNAPSHOT</api.framework.version>
+    </properties>
     <description>
         Lib to run API Framework code on Amazon Lambda
     </description>
@@ -144,11 +150,5 @@
             </plugin>
         </plugins>
     </build>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <api.framework.version>2.2-SNAPSHOT</api.framework.version>
-    </properties>
     <name>api-framework-amazon-lambda</name>
 </project>
