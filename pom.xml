@@ -35,7 +35,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>2.4</version>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -48,7 +48,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.4</version>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -126,7 +126,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>commong-config</id>
@@ -135,7 +135,9 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
-                            <descriptor>src/assembly/common-config.xml</descriptor>
+                            <descriptors>
+                                <descriptor>src/assembly/common-config.xml</descriptor>
+                            </descriptors>
                         </configuration>
                     </execution>
                 </executions>
