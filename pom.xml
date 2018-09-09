@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>in.erail</groupId>
     <artifactId>api-framework-amazon-lambda</artifactId>
-    <version>2.3</version>
+    <version>2.4-SNAPSHOT</version>
     <packaging>jar</packaging>
     <developers>
         <developer>
@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <api.framework.version>2.3</api.framework.version>
+        <api.framework.version>2.4-SNAPSHOT</api.framework.version>
     </properties>
     <description>
         Lib to run API Framework code on Amazon Lambda
