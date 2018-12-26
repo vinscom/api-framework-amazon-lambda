@@ -2,6 +2,7 @@ package in.erail.amazon.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import in.erail.glue.Glue;
@@ -10,16 +11,19 @@ import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.Message;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import static in.erail.common.FrameworkConstants.RoutingContext.Json.*;
+import in.erail.model.RequestEvent;
+import in.erail.model.ResponseEvent;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -27,71 +31,81 @@ import static in.erail.common.FrameworkConstants.RoutingContext.Json.*;
  */
 public class AWSLambda implements RequestStreamHandler {
 
+  protected Logger log = LogManager.getLogger(AWSLambda.class.getCanonicalName());
   private static final String SERVICE_ENV = "SERVICE";
   private static final String SERVICE_SYS_PROP = "service";
   private final RESTService mService;
+  private final List<String> allowedFields = new ArrayList<>();
 
   public AWSLambda() {
+
+    allowedFields.add("isBase64Encoded");
+    allowedFields.add("statusCode");
+    allowedFields.add("headers");
+    allowedFields.add("multiValueHeaders");
+    allowedFields.add("body");
+
     String component = System.getenv(SERVICE_ENV);
     if (Strings.isNullOrEmpty(component)) {
       component = System.getProperty(SERVICE_SYS_PROP);
     }
+
     mService = Glue.instance().resolve(component);
   }
 
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-
-    JsonObject requestJson = new JsonObject(Buffer.buffer(ByteStreams.toByteArray(inputStream)));
-    JsonObject responseJson = handleMessage(requestJson);
-
     try (OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8")) {
-      writer.write(responseJson.toString());
+      JsonObject requestJson = new JsonObject(Buffer.buffer(ByteStreams.toByteArray(inputStream)));
+      log.debug(() -> requestJson.toString());
+      String resp = handleMessage(requestJson).blockingGet();
+      log.debug(() -> resp);
+      writer.write(resp);
     }
   }
 
-  public JsonObject handleMessage(JsonObject pJsonObject) {
-
-    JsonObject msg;
-
-    try {
-      CompletableFuture<JsonObject> result = new CompletableFuture<>();
-      MessageAWSLambda<JsonObject> message = new MessageAWSLambda<>(result, pJsonObject);
-
-      Single
-              .just(message)
-              .map(m -> new Message<JsonObject>(message))
-              .subscribeOn(Schedulers.computation())
-              .subscribe(m -> getService().process(m));
-
-      msg = result.get();
-    } catch (InterruptedException | ExecutionException ex) {
-      msg = new JsonObject();
-      Logger.getLogger(AWSLambda.class.getName()).log(Level.SEVERE, null, ex);
-    }
-
-    return transform(msg);
+  public Single<String> handleMessage(JsonObject pRequest) {
+    return Single
+            .just(pRequest)
+            .subscribeOn(Schedulers.computation())
+            .map(this::convertBodyToBase64)
+            .map(reqJson -> reqJson.mapTo(RequestEvent.class))
+            .flatMapMaybe(req -> getService().process(req))
+            .toSingle(new ResponseEvent())
+            .map(resp -> JsonObject.mapFrom(resp))
+            .map(this::sanatizeResponse)
+            .map(respJson -> respJson.toString());
   }
 
-  public JsonObject transform(JsonObject pMsg) {
+  protected JsonObject sanatizeResponse(JsonObject pResp) {
+    Preconditions.checkNotNull(pResp);
 
-    pMsg.put(IS_BASE64_ENCODED, Boolean.TRUE);
+    Set<String> keys = new HashSet<>(pResp.fieldNames());
 
-    if (!pMsg.containsKey(STATUS_CODE)) {
-      pMsg.put(STATUS_CODE, "200");
+    keys
+            .stream()
+            .filter(key -> !allowedFields.contains(key))
+            .forEach(key -> pResp.remove(key));
+
+    return pResp;
+  }
+
+  protected JsonObject convertBodyToBase64(JsonObject pRequest) {
+
+    Boolean isBase64Encoded
+            = Optional
+                    .ofNullable(pRequest.getBoolean("isBase64Encoded"))
+                    .orElse(Boolean.FALSE);
+
+    if (isBase64Encoded == false && pRequest.containsKey("body")) {
+      Optional<String> body = Optional.ofNullable(pRequest.getString("body"));
+      body.ifPresent((t) -> {
+        pRequest.remove("body");
+        pRequest.put("body", body.get().getBytes());
+      });
     }
 
-    if (!pMsg.containsKey(HEADERS)) {
-      pMsg.put(HEADERS, new JsonObject());
-    }
-
-    if (pMsg.containsKey(BODY)) {
-      pMsg.put(BODY, pMsg.getString(BODY));
-    } else {
-      pMsg.put(BODY, "");
-    }
-
-    return pMsg;
+    return pRequest;
   }
 
   public RESTService getService() {
