@@ -3,6 +3,7 @@ package in.erail.service;
 import com.google.common.net.MediaType;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
+import io.reactivex.Maybe;
 import io.vertx.core.json.JsonArray;
 
 public class SessionGetService extends RESTServiceImpl {
@@ -18,10 +19,10 @@ public class SessionGetService extends RESTServiceImpl {
   }
 
   @Override
-  public ResponseEvent process(RequestEvent pRequest) {
-      return new ResponseEvent()
+  public Maybe<ResponseEvent> process(RequestEvent pRequest) {
+      return Maybe.just(new ResponseEvent()
               .setBody(getSessions().toString().getBytes())
-              .setContentType(MediaType.JSON_UTF_8);
+              .setContentType(MediaType.JSON_UTF_8));
   }
   
   public JsonArray getSessions() {

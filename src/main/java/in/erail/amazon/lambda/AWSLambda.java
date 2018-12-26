@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import in.erail.model.RequestEvent;
+import in.erail.model.ResponseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +70,8 @@ public class AWSLambda implements RequestStreamHandler {
             .subscribeOn(Schedulers.computation())
             .map(this::convertBodyToBase64)
             .map(reqJson -> reqJson.mapTo(RequestEvent.class))
-            .map(req -> getService().process(req))
+            .flatMapMaybe(req -> getService().process(req))
+            .toSingle(new ResponseEvent())
             .map(resp -> JsonObject.mapFrom(resp))
             .map(this::sanatizeResponse)
             .map(respJson -> respJson.toString());
@@ -78,7 +80,7 @@ public class AWSLambda implements RequestStreamHandler {
   protected JsonObject sanatizeResponse(JsonObject pResp) {
     Preconditions.checkNotNull(pResp);
 
-    Set<String> keys = new HashSet(pResp.fieldNames());
+    Set<String> keys = new HashSet<>(pResp.fieldNames());
 
     keys
             .stream()
