@@ -2,17 +2,23 @@ package in.erail.amazon.lambda.service;
 
 import com.google.common.base.Joiner;
 import com.google.common.io.BaseEncoding;
-import in.erail.amazon.lambda.model.LambdaProxyRequest;
-import in.erail.common.FrameworkConstants;
-import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.Message;
+import in.erail.model.RequestEvent;
+import in.erail.model.ResponseEvent;
 import in.erail.service.RESTServiceImpl;
-import io.vertx.core.http.HttpMethod;
+import io.reactivex.Maybe;
+import io.vertx.reactivex.core.MultiMap;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.core.http.HttpClientRequest;
-import io.vertx.reactivex.core.http.HttpClientResponse;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.logging.log4j.util.Strings;
 
 /**
  *
@@ -22,16 +28,57 @@ public class ProxyService extends RESTServiceImpl {
 
   private String mHost;
   private int mPort;
-  private String mBaseMountRoute;
+  private String mPathPrefix;
+
+  protected String generateURL(RequestEvent pRequest) {
+    StringBuilder sb = new StringBuilder("http://");
+
+    sb
+            .append(getHost())
+            .append(":")
+            .append(getPort());
+
+    if (Strings.isNotBlank(getPathPrefix())) {
+      sb.append(getPathPrefix());
+    }
+
+    sb.append(pRequest.getPath());
+
+    Optional
+            .ofNullable(pRequest.getQueryStringParameters())
+            .filter((t) -> !t.isEmpty())
+            .ifPresent((t) -> {
+              List<String> queryList = t
+                      .entrySet()
+                      .stream()
+                      .reduce(new ArrayList<>(), (acc, entry) -> {
+                        try {
+                          StringBuilder param = new StringBuilder();
+                          param.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.name()));
+                          param.append("=");
+                          param.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.name()));
+                          acc.add(param.toString());
+                        } catch (UnsupportedEncodingException ex) {
+                          Logger.getLogger(ProxyService.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        return acc;
+                      }, (first, second) -> {
+                        first.addAll(second);
+                        return first;
+                      });
+              sb.append("?").append(Joiner.on("&").join(queryList));
+            });
+
+    return sb.toString();
+  }
 
   @Override
-  public void process(Message<JsonObject> pMessage) {
-    LambdaProxyRequest proxyRequest = pMessage.body().mapTo(LambdaProxyRequest.class);
+  public Maybe<ResponseEvent> process(RequestEvent proxyRequest) {
 
     //Build Request
     HttpClientRequest clientRequest = getVertx()
             .createHttpClient()
-            .requestAbs(HttpMethod.valueOf(proxyRequest.getHttpMethod()), generateURL(proxyRequest));
+            .requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));
 
     //Add Headers
     Optional<Map<String, String>> headers = Optional
@@ -41,70 +88,40 @@ public class ProxyService extends RESTServiceImpl {
     headers.ifPresent((t) -> t.forEach((k, v) -> clientRequest.putHeader(k, v)));
 
     //Add Body
-    Optional<String> body = Optional
+    byte[] body = Optional
             .ofNullable(proxyRequest.getBody())
-            .map((t) -> {
-              if (proxyRequest.isIsBase64Encoded()) {
-                return new String(BaseEncoding.base64().decode(t));
-              }
-              return t;
-            });
+            .orElse(new byte[0]);
 
-    body.ifPresent((t) -> clientRequest.write(Buffer.buffer(t)));
+    if (body.length > 0) {
+      byte[] payload = body;
+      if (proxyRequest.isIsBase64Encoded()) {
+        payload = BaseEncoding.base64().decode(new String(body));
+      }
+      clientRequest.write(Buffer.buffer(payload));
+    }
 
     //Send Request
-    clientRequest
+    return clientRequest
             .toObservable()
-            .subscribe((resp) -> {
-              JsonObject response = new JsonObject();
+            .flatMap((resp) -> {
+              ResponseEvent event = new ResponseEvent();
 
               //Add Headers
-              Optional<JsonObject> respHeaders = Optional
+              Optional
                       .ofNullable(resp.headers())
-                      .flatMap(t -> Optional.of(t.getDelegate().entries()))
-                      .map((r) -> {
-                        JsonObject h = new JsonObject();
-                        r.forEach((i) -> h.put(i.getKey(), i.getValue()));
-                        return h;
-                      });
+                      .orElse(MultiMap.caseInsensitiveMultiMap())
+                      .entries()
+                      .stream()
+                      .forEach((t) -> event.addHeader(t.getKey(), t.getValue()));
 
-              respHeaders.ifPresent(t -> response.put(FrameworkConstants.RoutingContext.Json.HEADERS, t));
+              event.setStatusCode(resp.statusCode());
+              event.setIsBase64Encoded(true);
 
-              //Add status code
-              response.put(FrameworkConstants.RoutingContext.Json.STATUS_CODE, resp.statusCode());
-
-              //Add Body
-              response.put(FrameworkConstants.RoutingContext.Json.IS_BASE64_ENCODED, true);
-
-              resp
+              return resp
                       .toObservable()
-                      .subscribe((t) -> {
-                        response.put(FrameworkConstants.RoutingContext.Json.BODY, t.getDelegate().getBytes());
-                        pMessage.reply(response);
-                      });
-            });
-  }
-
-  protected String generateURL(LambdaProxyRequest pRequest) {
-    StringBuilder sb = new StringBuilder("http://");
-
-    sb
-            .append(getHost())
-            .append(":")
-            .append(getPort())
-            .append("/")
-            .append(pRequest.getPath());
-
-    Optional<Map<String, String>> qs = Optional
-            .ofNullable(pRequest.getQueryStringParameters())
-            .filter((t) -> !t.isEmpty());
-
-    qs.ifPresent((t) -> {
-      sb.append("?");
-      sb.append(Joiner.on("&").join(t.entrySet()));
-    });
-
-    return sb.toString();
+                      .map(b -> event.setBody(b.getBytes()));
+            })
+            .singleElement();
   }
 
   public String getHost() {
@@ -123,12 +140,12 @@ public class ProxyService extends RESTServiceImpl {
     this.mPort = pPort;
   }
 
-  public String getBaseMountRoute() {
-    return mBaseMountRoute;
+  public String getPathPrefix() {
+    return mPathPrefix;
   }
 
-  public void setBaseMountRoute(String pBaseMountRoute) {
-    this.mBaseMountRoute = pBaseMountRoute;
+  public void setPathPrefix(String pPathPrefix) {
+    this.mPathPrefix = pPathPrefix;
   }
 
 }
