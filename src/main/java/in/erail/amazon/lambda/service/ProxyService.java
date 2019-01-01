@@ -93,7 +93,6 @@ public class ProxyService extends RESTServiceImpl {
             .orElse(new byte[0]);
 
     if (body.length > 0) {
-      byte[] payload = body;
       if (proxyRequest.isIsBase64Encoded()) {
         body = BaseEncoding.base64().decode(new String(body));
       }
