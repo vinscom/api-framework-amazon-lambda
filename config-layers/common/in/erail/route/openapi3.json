@@ -5,11 +5,11 @@
         "version": "1.0.0"
     },
     "paths": {
-        "/session": {
+        "/hello": {
             "get": {
                 "summary": "Get all session messages",
                 "description": "Return all session messages",
-                "operationId": "API_SESSION_GET",
+                "operationId": "API_HELLO_GET",
                 "responses": {
                     "200": {
                         "description": "Return all messages",

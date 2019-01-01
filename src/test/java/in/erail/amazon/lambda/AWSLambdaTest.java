@@ -20,8 +20,8 @@ public class AWSLambdaTest {
   public Timeout rule = Timeout.seconds(2000);
 
   public static String EVENT_MSG = "{\n"
-          + "    \"resource\": \"/session\",\n"
-          + "    \"path\": \"/session\",\n"
+          + "    \"resource\": \"/hello\",\n"
+          + "    \"path\": \"/hello\",\n"
           + "    \"httpMethod\": \"GET\",\n"
           + "    \"headers\": {\n"
           + "        \"Accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\",\n"
@@ -142,7 +142,7 @@ public class AWSLambdaTest {
 
   @Test
   public void testProcess() {
-    System.setProperty("service", "/in/erail/service/SessionGetService");
+    System.setProperty("service", "/in/erail/service/HelloService");
     String result = new AWSLambda().handleMessage(new JsonObject(EVENT_MSG)).blockingGet();
     JsonObject jsonResp = new JsonObject(result);
     ResponseEvent resp = new JsonObject(result).mapTo(ResponseEvent.class);
