@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.io.BaseEncoding;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
+import in.erail.server.Server;
 import in.erail.service.RESTServiceImpl;
 import io.reactivex.Maybe;
 import io.vertx.reactivex.core.MultiMap;
@@ -31,6 +32,7 @@ public class ProxyService extends RESTServiceImpl {
   private int mPort;
   private String mPathPrefix;
   private WebClient mWebClient;
+  private Server mServer;
 
   protected String generateURL(RequestEvent pRequest) {
     StringBuilder sb = new StringBuilder("http://");
@@ -150,6 +152,14 @@ public class ProxyService extends RESTServiceImpl {
 
   public void setWebClient(WebClient pWebClient) {
     this.mWebClient = pWebClient;
+  }
+
+  public Server getServer() {
+    return mServer;
+  }
+
+  public void setServer(Server pServer) {
+    this.mServer = pServer;
   }
 
 }
