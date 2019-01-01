@@ -8,7 +8,8 @@ import in.erail.service.RESTServiceImpl;
 import io.reactivex.Maybe;
 import io.vertx.reactivex.core.MultiMap;
 import io.vertx.reactivex.core.buffer.Buffer;
-import io.vertx.reactivex.core.http.HttpClientRequest;
+import io.vertx.reactivex.ext.web.client.HttpRequest;
+import io.vertx.reactivex.ext.web.client.WebClient;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +30,7 @@ public class ProxyService extends RESTServiceImpl {
   private String mHost;
   private int mPort;
   private String mPathPrefix;
+  private WebClient mWebClient;
 
   protected String generateURL(RequestEvent pRequest) {
     StringBuilder sb = new StringBuilder("http://");
@@ -76,9 +78,7 @@ public class ProxyService extends RESTServiceImpl {
   public Maybe<ResponseEvent> process(RequestEvent proxyRequest) {
 
     //Build Request
-    HttpClientRequest clientRequest = getVertx()
-            .createHttpClient()
-            .requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));
+    HttpRequest<Buffer> clientRequest = getWebClient().requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));
 
     //Add Headers
     Optional<Map<String, String>> headers = Optional
@@ -95,15 +95,14 @@ public class ProxyService extends RESTServiceImpl {
     if (body.length > 0) {
       byte[] payload = body;
       if (proxyRequest.isIsBase64Encoded()) {
-        payload = BaseEncoding.base64().decode(new String(body));
+        body = BaseEncoding.base64().decode(new String(body));
       }
-      clientRequest.write(Buffer.buffer(payload));
     }
 
     //Send Request
     return clientRequest
-            .toObservable()
-            .flatMap((resp) -> {
+            .rxSendBuffer(Buffer.buffer(body))
+            .map((resp) -> {
               ResponseEvent event = new ResponseEvent();
 
               //Add Headers
@@ -116,12 +115,10 @@ public class ProxyService extends RESTServiceImpl {
 
               event.setStatusCode(resp.statusCode());
               event.setIsBase64Encoded(true);
-
-              return resp
-                      .toObservable()
-                      .map(b -> event.setBody(b.getBytes()));
+              event.setBody(resp.body().getBytes());
+              return event;
             })
-            .singleElement();
+            .toMaybe();
   }
 
   public String getHost() {
@@ -146,6 +143,14 @@ public class ProxyService extends RESTServiceImpl {
 
   public void setPathPrefix(String pPathPrefix) {
     this.mPathPrefix = pPathPrefix;
+  }
+
+  public WebClient getWebClient() {
+    return mWebClient;
+  }
+
+  public void setWebClient(WebClient pWebClient) {
+    this.mWebClient = pWebClient;
   }
 
 }

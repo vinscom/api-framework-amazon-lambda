@@ -1,5 +1,7 @@
-package in.erail.amazon.lambda;
+package in.erail.amazon.lambda.service;
 
+import in.erail.amazon.lambda.AWSLambda;
+import in.erail.glue.Glue;
 import in.erail.model.ResponseEvent;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.junit.Timeout;
@@ -14,7 +16,7 @@ import static org.junit.Assert.*;
  * @author vinay
  */
 @RunWith(VertxUnitRunner.class)
-public class AWSLambdaTest {
+public class ProxyServiceTest {
 
   @Rule
   public Timeout rule = Timeout.seconds(2000);
@@ -142,7 +144,8 @@ public class AWSLambdaTest {
 
   @Test
   public void testProcess() {
-    System.setProperty("service", "/in/erail/service/SessionGetService");
+    Glue.instance().resolve("/in/erail/server/Server");
+    System.setProperty("service", "/in/erail/amazon/lambda/service/ProxyService");
     String result = new AWSLambda().handleMessage(new JsonObject(EVENT_MSG)).blockingGet();
     JsonObject jsonResp = new JsonObject(result);
     ResponseEvent resp = new JsonObject(result).mapTo(ResponseEvent.class);
