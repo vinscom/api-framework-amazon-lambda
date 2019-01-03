@@ -94,12 +94,6 @@ public class ProxyService extends RESTServiceImpl {
             .ofNullable(proxyRequest.getBody())
             .orElse(new byte[0]);
 
-    if (body.length > 0) {
-      if (proxyRequest.isIsBase64Encoded()) {
-        body = BaseEncoding.base64().decode(new String(body));
-      }
-    }
-
     //Send Request
     return clientRequest
             .rxSendBuffer(Buffer.buffer(body))
@@ -116,9 +110,14 @@ public class ProxyService extends RESTServiceImpl {
 
               event.setStatusCode(resp.statusCode());
               event.setIsBase64Encoded(true);
-              event.setBody(resp.body().getBytes());
+              
+              Optional
+                      .ofNullable(resp.body())
+                      .ifPresent(b -> event.setBody(b.getBytes()));
+              
               return event;
             })
+            .doOnSuccess(e -> getLog().debug(() -> e.toString()))
             .toMaybe();
   }
 

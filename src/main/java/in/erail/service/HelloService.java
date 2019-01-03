@@ -22,7 +22,7 @@ public class HelloService extends RESTServiceImpl {
   public Maybe<ResponseEvent> process(RequestEvent pRequest) {
       return Maybe.just(new ResponseEvent()
               .setBody(getHelloData().toString().getBytes())
-              .setContentType(MediaType.JSON_UTF_8));
+              .setMediaType(MediaType.JSON_UTF_8));
   }
   
   public JsonArray getHelloData() {
