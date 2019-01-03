@@ -22,8 +22,8 @@ public class ProxyServiceTest {
   public Timeout rule = Timeout.seconds(2000);
 
   public static String EVENT_MSG = "{\n"
-          + "    \"resource\": \"/hello\",\n"
-          + "    \"path\": \"/hello\",\n"
+          + "    \"resource\": \"/v1/hello\",\n"
+          + "    \"path\": \"/v1/hello\",\n"
           + "    \"httpMethod\": \"GET\",\n"
           + "    \"headers\": {\n"
           + "        \"Accept\": \"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\",\n"

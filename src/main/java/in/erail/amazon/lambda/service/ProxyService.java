@@ -1,7 +1,6 @@
 package in.erail.amazon.lambda.service;
 
 import com.google.common.base.Joiner;
-import com.google.common.io.BaseEncoding;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import in.erail.server.Server;
