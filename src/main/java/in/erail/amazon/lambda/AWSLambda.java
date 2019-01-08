@@ -70,11 +70,18 @@ public class AWSLambda implements RequestStreamHandler {
             .subscribeOn(Schedulers.computation())
             .map(this::convertBodyToBase64)
             .map(reqJson -> reqJson.mapTo(RequestEvent.class))
+            .doOnSuccess(this::populateSystemProperties)
             .flatMapMaybe(req -> getService().process(req))
             .toSingle(new ResponseEvent())
             .map(resp -> JsonObject.mapFrom(resp))
             .map(this::sanatizeResponse)
             .map(respJson -> respJson.toString());
+  }
+
+  protected void populateSystemProperties(RequestEvent pRequest) {
+    Optional
+            .ofNullable(pRequest.getRequestContext().get("stage"))
+            .ifPresent(s -> System.setProperty("stage", s.toString()));
   }
 
   protected JsonObject sanatizeResponse(JsonObject pResp) {
