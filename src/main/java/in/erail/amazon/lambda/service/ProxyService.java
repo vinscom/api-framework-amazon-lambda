@@ -6,6 +6,7 @@ import in.erail.model.ResponseEvent;
 import in.erail.server.Server;
 import in.erail.service.RESTServiceImpl;
 import io.reactivex.Maybe;
+import io.reactivex.MaybeSource;
 import io.vertx.reactivex.core.MultiMap;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.client.HttpRequest;
@@ -75,8 +76,11 @@ public class ProxyService extends RESTServiceImpl {
     return sb.toString();
   }
 
-  @Override
-  public Maybe<ResponseEvent> process(RequestEvent proxyRequest) {
+  public MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest) {
+    return pRequest.flatMap(this::handle);
+  }
+
+  public Maybe<ResponseEvent> handle(RequestEvent proxyRequest) {
 
     //Build Request
     HttpRequest<Buffer> clientRequest = getWebClient().requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));
@@ -109,15 +113,16 @@ public class ProxyService extends RESTServiceImpl {
 
               event.setStatusCode(resp.statusCode());
               event.setIsBase64Encoded(true);
-              
+
               Optional
                       .ofNullable(resp.body())
                       .ifPresent(b -> event.setBody(b.getBytes()));
-              
+
               return event;
             })
             .doOnSuccess(e -> getLog().debug(() -> e.toString()))
             .toMaybe();
+
   }
 
   public String getHost() {

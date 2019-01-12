@@ -4,6 +4,7 @@ import com.google.common.net.MediaType;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import io.reactivex.Maybe;
+import io.reactivex.MaybeSource;
 import io.vertx.core.json.JsonArray;
 
 public class HelloService extends RESTServiceImpl {
@@ -18,8 +19,9 @@ public class HelloService extends RESTServiceImpl {
     mHelloData.add("S5");
   }
 
+  
   @Override
-  public Maybe<ResponseEvent> process(RequestEvent pRequest) {
+  public MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest) {
       return Maybe.just(new ResponseEvent()
               .setBody(getHelloData().toString().getBytes())
               .setMediaType(MediaType.JSON_UTF_8));
