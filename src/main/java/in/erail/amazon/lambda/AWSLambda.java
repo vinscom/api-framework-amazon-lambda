@@ -71,7 +71,7 @@ public class AWSLambda implements RequestStreamHandler {
             .map(this::convertBodyToBase64)
             .map(reqJson -> reqJson.mapTo(RequestEvent.class))
             .doOnSuccess(this::populateSystemProperties)
-            .flatMapMaybe(req -> getService().process(req))
+            .flatMapMaybe(req -> getService().handleEvent(req))
             .toSingle(new ResponseEvent())
             .map(resp -> JsonObject.mapFrom(resp))
             .map(this::sanatizeResponse)
