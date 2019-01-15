@@ -6,6 +6,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import in.erail.glue.Glue;
+import in.erail.model.Event;
 import in.erail.service.RESTService;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
@@ -16,7 +17,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import in.erail.model.RequestEvent;
-import in.erail.model.ResponseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -69,11 +69,11 @@ public class AWSLambda implements RequestStreamHandler {
             .just(pRequest)
             .subscribeOn(Schedulers.computation())
             .map(this::convertBodyToBase64)
-            .map(reqJson -> reqJson.mapTo(RequestEvent.class))
+            .map(reqJson -> reqJson.mapTo(getService().getRequestEventClass()))
             .doOnSuccess(this::populateSystemProperties)
-            .flatMapMaybe(req -> getService().process(req))
-            .toSingle(new ResponseEvent())
-            .map(resp -> JsonObject.mapFrom(resp))
+            .flatMapMaybe(req -> getService().handleEvent(getService().createEvent(req)))
+            .toSingle(new Event())
+            .map(resp -> JsonObject.mapFrom(resp.getResponse()))
             .map(this::sanatizeResponse)
             .map(respJson -> respJson.toString());
   }

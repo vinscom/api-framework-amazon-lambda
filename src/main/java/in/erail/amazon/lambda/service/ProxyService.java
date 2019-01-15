@@ -1,11 +1,13 @@
 package in.erail.amazon.lambda.service;
 
 import com.google.common.base.Joiner;
+import in.erail.model.Event;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import in.erail.server.Server;
 import in.erail.service.RESTServiceImpl;
 import io.reactivex.Maybe;
+import io.reactivex.MaybeSource;
 import io.vertx.reactivex.core.MultiMap;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.client.HttpRequest;
@@ -75,9 +77,14 @@ public class ProxyService extends RESTServiceImpl {
     return sb.toString();
   }
 
-  @Override
-  public Maybe<ResponseEvent> process(RequestEvent proxyRequest) {
+  public MaybeSource<Event> process(Maybe<Event> pRequest) {
+    return pRequest.flatMap(this::handle);
+  }
 
+  public Maybe<Event> handle(Event pEvent) {
+
+    RequestEvent proxyRequest = pEvent.getRequest();
+    
     //Build Request
     HttpRequest<Buffer> clientRequest = getWebClient().requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));
 
@@ -97,7 +104,7 @@ public class ProxyService extends RESTServiceImpl {
     return clientRequest
             .rxSendBuffer(Buffer.buffer(body))
             .map((resp) -> {
-              ResponseEvent event = new ResponseEvent();
+              ResponseEvent responseEvent = pEvent.getResponse();
 
               //Add Headers
               Optional
@@ -105,19 +112,20 @@ public class ProxyService extends RESTServiceImpl {
                       .orElse(MultiMap.caseInsensitiveMultiMap())
                       .entries()
                       .stream()
-                      .forEach((t) -> event.addHeader(t.getKey(), t.getValue()));
+                      .forEach((t) -> responseEvent.addHeader(t.getKey(), t.getValue()));
 
-              event.setStatusCode(resp.statusCode());
-              event.setIsBase64Encoded(true);
-              
+              responseEvent.setStatusCode(resp.statusCode());
+              responseEvent.setIsBase64Encoded(true);
+
               Optional
                       .ofNullable(resp.body())
-                      .ifPresent(b -> event.setBody(b.getBytes()));
-              
-              return event;
+                      .ifPresent(b -> responseEvent.setBody(b.getBytes()));
+
+              return pEvent;
             })
             .doOnSuccess(e -> getLog().debug(() -> e.toString()))
             .toMaybe();
+
   }
 
   public String getHost() {
