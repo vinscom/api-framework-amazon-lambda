@@ -1,6 +1,7 @@
 package in.erail.amazon.lambda.service;
 
 import com.google.common.base.Joiner;
+import in.erail.model.Event;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import in.erail.server.Server;
@@ -76,12 +77,14 @@ public class ProxyService extends RESTServiceImpl {
     return sb.toString();
   }
 
-  public MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest) {
+  public MaybeSource<Event> process(Maybe<Event> pRequest) {
     return pRequest.flatMap(this::handle);
   }
 
-  public Maybe<ResponseEvent> handle(RequestEvent proxyRequest) {
+  public Maybe<Event> handle(Event pEvent) {
 
+    RequestEvent proxyRequest = pEvent.getRequest();
+    
     //Build Request
     HttpRequest<Buffer> clientRequest = getWebClient().requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));
 
@@ -101,7 +104,7 @@ public class ProxyService extends RESTServiceImpl {
     return clientRequest
             .rxSendBuffer(Buffer.buffer(body))
             .map((resp) -> {
-              ResponseEvent event = new ResponseEvent();
+              ResponseEvent responseEvent = pEvent.getResponse();
 
               //Add Headers
               Optional
@@ -109,16 +112,16 @@ public class ProxyService extends RESTServiceImpl {
                       .orElse(MultiMap.caseInsensitiveMultiMap())
                       .entries()
                       .stream()
-                      .forEach((t) -> event.addHeader(t.getKey(), t.getValue()));
+                      .forEach((t) -> responseEvent.addHeader(t.getKey(), t.getValue()));
 
-              event.setStatusCode(resp.statusCode());
-              event.setIsBase64Encoded(true);
+              responseEvent.setStatusCode(resp.statusCode());
+              responseEvent.setIsBase64Encoded(true);
 
               Optional
                       .ofNullable(resp.body())
-                      .ifPresent(b -> event.setBody(b.getBytes()));
+                      .ifPresent(b -> responseEvent.setBody(b.getBytes()));
 
-              return event;
+              return pEvent;
             })
             .doOnSuccess(e -> getLog().debug(() -> e.toString()))
             .toMaybe();

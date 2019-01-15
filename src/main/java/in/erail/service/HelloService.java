@@ -1,8 +1,7 @@
 package in.erail.service;
 
 import com.google.common.net.MediaType;
-import in.erail.model.RequestEvent;
-import in.erail.model.ResponseEvent;
+import in.erail.model.Event;
 import io.reactivex.Maybe;
 import io.reactivex.MaybeSource;
 import io.vertx.core.json.JsonArray;
@@ -19,14 +18,14 @@ public class HelloService extends RESTServiceImpl {
     mHelloData.add("S5");
   }
 
-  
   @Override
-  public MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest) {
-      return Maybe.just(new ResponseEvent()
-              .setBody(getHelloData().toString().getBytes())
-              .setMediaType(MediaType.JSON_UTF_8));
+  public MaybeSource<Event> process(Maybe<Event> pEvent) {
+    return pEvent.doOnSuccess(e -> e
+            .getResponse()
+            .setBody(getHelloData().toString().getBytes())
+            .setMediaType(MediaType.JSON_UTF_8));
   }
-  
+
   public JsonArray getHelloData() {
     return mHelloData;
   }
