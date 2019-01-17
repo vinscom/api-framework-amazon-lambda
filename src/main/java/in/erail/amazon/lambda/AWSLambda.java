@@ -6,6 +6,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import in.erail.glue.Glue;
+import in.erail.glue.common.Util;
 import in.erail.model.Event;
 import in.erail.service.RESTService;
 import io.reactivex.Single;
@@ -32,8 +33,7 @@ import org.apache.logging.log4j.Logger;
 public class AWSLambda implements RequestStreamHandler {
 
   protected Logger log = LogManager.getLogger(AWSLambda.class.getCanonicalName());
-  private static final String SERVICE_ENV = "SERVICE";
-  private static final String SERVICE_SYS_PROP = "service";
+  private static final String SERVICE_ENV = "service";
   private final RESTService mService;
   private final List<String> allowedFields = new ArrayList<>();
 
@@ -45,17 +45,18 @@ public class AWSLambda implements RequestStreamHandler {
     allowedFields.add("multiValueHeaders");
     allowedFields.add("body");
 
-    String component = System.getenv(SERVICE_ENV);
-    if (Strings.isNullOrEmpty(component)) {
-      component = System.getProperty(SERVICE_SYS_PROP);
-    }
+    String component = Util.getEnvironmentValue(SERVICE_ENV);
 
+    if(Strings.isNullOrEmpty(component)) {
+      throw new RuntimeException("Service not defined in lambda environment");
+    }
+    
     mService = Glue.instance().resolve(component);
   }
 
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-    try (OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8")) {
+    try ( OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8")) {
       JsonObject requestJson = new JsonObject(Buffer.buffer(ByteStreams.toByteArray(inputStream)));
       log.debug(() -> requestJson.toString());
       String resp = handleMessage(requestJson).blockingGet();
