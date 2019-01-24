@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>in.erail</groupId>
     <artifactId>api-framework-amazon-lambda</artifactId>
-    <version>2.4.5</version>
+    <version>2.4.6</version>
     <packaging>jar</packaging>
     <developers>
         <developer>
@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <api.framework.version>2.4.5</api.framework.version>
+        <api.framework.version>2.4.6</api.framework.version>
         <layer.api.framework>${settings.localRepository}/in/erail/api-framework/${api.framework.version}/api-framework-${api.framework.version}-common-config.zip</layer.api.framework>
         <layer.api.framework.lambda.common>${project.basedir}/config-layers/common</layer.api.framework.lambda.common>
         <layer.api.framework.lambda.test>${project.basedir}/config-layers/test</layer.api.framework.lambda.test>
