@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <api.framework.version>2.4.6</api.framework.version>
+        <api.framework.version>2.4.7</api.framework.version>
         <layer.api.framework>${settings.localRepository}/in/erail/api-framework/${api.framework.version}/api-framework-${api.framework.version}-common-config.zip</layer.api.framework>
         <layer.api.framework.lambda.common>${project.basedir}/config-layers/common</layer.api.framework.lambda.common>
         <layer.api.framework.lambda.test>${project.basedir}/config-layers/test</layer.api.framework.lambda.test>
@@ -139,7 +139,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-unit</artifactId>
-            <version>3.6.2</version>
+            <version>3.6.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
