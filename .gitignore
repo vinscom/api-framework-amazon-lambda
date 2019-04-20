@@ -1,3 +1,7 @@
 target
 nbactions.xml
 /nbproject/
+.classpath
+.factorypath
+.project
+.settings
