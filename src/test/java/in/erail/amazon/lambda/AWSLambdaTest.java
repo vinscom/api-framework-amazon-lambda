@@ -2,22 +2,17 @@ package in.erail.amazon.lambda;
 
 import in.erail.model.ResponseEvent;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.unit.junit.Timeout;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Test;
-import org.junit.Rule;
-import org.junit.runner.RunWith;
-import static org.junit.Assert.*;
+import io.vertx.junit5.VertxExtension;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
  * @author vinay
  */
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class AWSLambdaTest {
-
-  @Rule
-  public Timeout rule = Timeout.seconds(2000);
 
   public static String EVENT_MSG = "{\n"
           + "    \"resource\": \"/{proxy+}\",\n"

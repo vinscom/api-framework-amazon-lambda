@@ -4,40 +4,31 @@ import in.erail.glue.Glue;
 import in.erail.server.Server;
 import io.vertx.core.json.JsonArray;
 
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.Timeout;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import io.vertx.reactivex.ext.web.client.WebClient;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class HelloServiceTest {
 
-  @Rule
-  public Timeout rule = Timeout.seconds(2000);
-
-  @SuppressWarnings("deprecation")
   @Test
-  public void testGetRequest(TestContext context) {
+  public void testGetRequest(VertxTestContext testContext) {
 
-    Async async = context.async(2);
     Server server = Glue.instance().<Server>resolve("/in/erail/server/Server");
-    server
-            .getVertx()
-            .createHttpClient()
+
+    WebClient
+            .create(server.getVertx())
             .get(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/hello")
-            .handler(response -> {
-              context.assertEquals(response.statusCode(), 200, response.statusMessage());
-              response.bodyHandler((event) -> {
-                JsonArray data = event.toJsonArray();
-                context.assertEquals(5, data.size());
-                async.countDown();
-              });
-              async.countDown();
+            .rxSend()
+            .doOnSuccess(response -> assertEquals(response.statusCode(), 200, response.statusMessage()))
+            .doOnSuccess(response -> {
+              JsonArray data = response.bodyAsJsonArray();
+              assertEquals(5, data.size());
             })
-            .end();
+            .subscribe(t -> testContext.completeNow(), err -> testContext.failNow(err));
   }
 
 }
