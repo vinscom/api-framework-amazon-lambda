@@ -47,10 +47,10 @@ public class AWSLambda implements RequestStreamHandler {
 
     String component = Util.getEnvironmentValue(SERVICE_ENV);
 
-    if(Strings.isNullOrEmpty(component)) {
+    if (Strings.isNullOrEmpty(component)) {
       throw new RuntimeException("Service not defined in lambda environment");
     }
-    
+
     mService = Glue.instance().resolve(component);
   }
 
@@ -69,7 +69,7 @@ public class AWSLambda implements RequestStreamHandler {
     return Single
             .just(pRequest)
             .subscribeOn(Schedulers.computation())
-            .map(this::convertBodyToBase64)
+            .map(this::copyPayloadToBody)
             .map(reqJson -> reqJson.mapTo(getService().getRequestEventClass()))
             .doOnSuccess(this::populateSystemProperties)
             .flatMapMaybe(req -> getService().handleEvent(getService().createEvent(req)))
@@ -80,6 +80,11 @@ public class AWSLambda implements RequestStreamHandler {
   }
 
   protected void populateSystemProperties(RequestEvent pRequest) {
+
+    if (pRequest.getRequestContext() == null) {
+      return;
+    }
+
     Optional
             .ofNullable(pRequest.getRequestContext().get("stage"))
             .ifPresent(s -> System.setProperty("stage", s.toString()));
@@ -98,19 +103,45 @@ public class AWSLambda implements RequestStreamHandler {
     return pResp;
   }
 
-  protected JsonObject convertBodyToBase64(JsonObject pRequest) {
+  protected JsonObject copyPayloadToBody(JsonObject pRequest) {
 
     Boolean isBase64Encoded
             = Optional
                     .ofNullable(pRequest.getBoolean("isBase64Encoded"))
                     .orElse(Boolean.FALSE);
 
-    if (isBase64Encoded == false && pRequest.containsKey("body")) {
-      Optional<String> body = Optional.ofNullable(pRequest.getString("body"));
-      body.ifPresent((t) -> {
-        pRequest.remove("body");
-        pRequest.put("body", body.get().getBytes());
-      });
+    byte[] body = null;
+    boolean discardOriginalMsg = false;
+
+    if (pRequest.containsKey("body")) {
+      if (isBase64Encoded == false) {
+        Optional<String> b = Optional.ofNullable(pRequest.getString("body"));
+        if (b.isPresent()) {
+          body = b.get().getBytes();
+        }
+      }
+    } else if (pRequest.containsKey("records")) {
+      body = pRequest.getJsonArray("records").toString().getBytes();
+      discardOriginalMsg = true;
+    } else if (pRequest.containsKey("Records")) {
+      body = pRequest.getJsonArray("Records").toString().getBytes();
+      discardOriginalMsg = true;
+    } else {
+      body = pRequest.toString().getBytes();
+      discardOriginalMsg = true;
+    }
+
+    if (discardOriginalMsg) {
+      pRequest = new JsonObject();
+    }
+
+    if (body != null) {
+      pRequest.remove("body");
+      pRequest.put("body", body);
+    }
+
+    if (log.isDebugEnabled()) {
+      log.debug(pRequest.getString("body"));
     }
 
     return pRequest;
