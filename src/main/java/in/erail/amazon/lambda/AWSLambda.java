@@ -5,6 +5,9 @@ import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
+import in.erail.amazon.lambda.eventsource.APIGatewayProxyEventSource;
+import in.erail.amazon.lambda.eventsource.DefaultEventSource;
+import in.erail.amazon.lambda.eventsource.S3EventSource;
 import in.erail.glue.Glue;
 import in.erail.glue.common.Util;
 import in.erail.model.Event;
@@ -18,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import in.erail.model.RequestEvent;
+import io.reactivex.Observable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +39,7 @@ public class AWSLambda implements RequestStreamHandler {
   protected Logger log = LogManager.getLogger(AWSLambda.class.getCanonicalName());
   private static final String SERVICE_ENV = "service";
   private final RESTService mService;
+  private EventSource[] eventSource;
   private final List<String> allowedFields = new ArrayList<>();
 
   public AWSLambda() {
@@ -52,6 +57,8 @@ public class AWSLambda implements RequestStreamHandler {
     }
 
     mService = Glue.instance().resolve(component);
+
+    eventSource = new EventSource[]{new APIGatewayProxyEventSource(), new S3EventSource(), new DefaultEventSource()};
   }
 
   @Override
@@ -66,13 +73,15 @@ public class AWSLambda implements RequestStreamHandler {
   }
 
   public Single<String> handleMessage(JsonObject pRequest) {
-    return Single
-            .just(pRequest)
+    return Observable
+            .fromArray(eventSource)
             .subscribeOn(Schedulers.computation())
-            .map(this::copyPayloadToBody)
+            .filter(e -> e.check(pRequest))
+            .firstElement()
+            .map(e -> e.transform(pRequest))
             .map(reqJson -> reqJson.mapTo(getService().getRequestEventClass()))
             .doOnSuccess(this::populateSystemProperties)
-            .flatMapMaybe(req -> getService().handleEvent(getService().createEvent(req)))
+            .flatMap(req -> getService().handleEvent(getService().createEvent(req)))
             .toSingle(new Event())
             .map(resp -> JsonObject.mapFrom(resp.getResponse()))
             .map(this::sanatizeResponse)
@@ -101,50 +110,6 @@ public class AWSLambda implements RequestStreamHandler {
             .forEach(key -> pResp.remove(key));
 
     return pResp;
-  }
-
-  protected JsonObject copyPayloadToBody(JsonObject pRequest) {
-
-    Boolean isBase64Encoded
-            = Optional
-                    .ofNullable(pRequest.getBoolean("isBase64Encoded"))
-                    .orElse(Boolean.FALSE);
-
-    byte[] body = null;
-    boolean discardOriginalMsg = false;
-
-    if (pRequest.containsKey("body")) {
-      if (isBase64Encoded == false) {
-        Optional<String> b = Optional.ofNullable(pRequest.getString("body"));
-        if (b.isPresent()) {
-          body = b.get().getBytes();
-        }
-      }
-    } else if (pRequest.containsKey("records")) {
-      body = pRequest.getJsonArray("records").toString().getBytes();
-      discardOriginalMsg = true;
-    } else if (pRequest.containsKey("Records")) {
-      body = pRequest.getJsonArray("Records").toString().getBytes();
-      discardOriginalMsg = true;
-    } else {
-      body = pRequest.toString().getBytes();
-      discardOriginalMsg = true;
-    }
-
-    if (discardOriginalMsg) {
-      pRequest = new JsonObject();
-    }
-
-    if (body != null) {
-      pRequest.remove("body");
-      pRequest.put("body", body);
-    }
-
-    if (log.isDebugEnabled()) {
-      log.debug(pRequest.getString("body"));
-    }
-
-    return pRequest;
   }
 
   public RESTService getService() {
