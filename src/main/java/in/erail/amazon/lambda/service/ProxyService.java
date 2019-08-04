@@ -1,6 +1,7 @@
 package in.erail.amazon.lambda.service;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import in.erail.model.Event;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
@@ -84,6 +85,10 @@ public class ProxyService extends RESTServiceImpl {
   public Maybe<Event> handle(Event pEvent) {
 
     RequestEvent proxyRequest = pEvent.getRequest();
+    
+    Preconditions.checkNotNull(proxyRequest.getPath());
+    Preconditions.checkNotNull(proxyRequest.getHttpMethod());
+    
     
     //Build Request
     HttpRequest<Buffer> clientRequest = getWebClient().requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));

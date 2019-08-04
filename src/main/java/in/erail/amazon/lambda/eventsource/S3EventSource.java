@@ -1,5 +1,7 @@
 package in.erail.amazon.lambda.eventsource;
 
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import in.erail.amazon.lambda.EventSource;
 import in.erail.glue.common.Util;
 import io.vertx.core.json.JsonObject;
@@ -31,7 +33,9 @@ public class S3EventSource implements EventSource {
 
     JsonObject newRequest = new JsonObject()
             .put("path", s3url)
-            .put("body", pEvent.toString().getBytes());
+            .put("httpMethod", "POST")
+            .put("body", pEvent.toString().getBytes())
+            .put("headers", new JsonObject().put(HttpHeaders.CONTENT_TYPE,MediaType.JSON_UTF_8.toString()));
 
     return newRequest;
   }
