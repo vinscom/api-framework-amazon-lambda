@@ -85,11 +85,10 @@ public class ProxyService extends RESTServiceImpl {
   public Maybe<Event> handle(Event pEvent) {
 
     RequestEvent proxyRequest = pEvent.getRequest();
-    
+
     Preconditions.checkNotNull(proxyRequest.getPath());
     Preconditions.checkNotNull(proxyRequest.getHttpMethod());
-    
-    
+
     //Build Request
     HttpRequest<Buffer> clientRequest = getWebClient().requestAbs(proxyRequest.getHttpMethod(), generateURL(proxyRequest));
 
