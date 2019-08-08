@@ -8,6 +8,7 @@ import com.google.common.io.ByteStreams;
 import in.erail.amazon.lambda.eventsource.APIGatewayProxyEventSource;
 import in.erail.amazon.lambda.eventsource.DefaultEventSource;
 import in.erail.amazon.lambda.eventsource.S3EventSource;
+import in.erail.amazon.lambda.eventsource.SQSEventSource;
 import in.erail.glue.Glue;
 import in.erail.glue.common.Util;
 import in.erail.model.Event;
@@ -58,12 +59,12 @@ public class AWSLambda implements RequestStreamHandler {
 
     mService = Glue.instance().resolve(component);
 
-    eventSource = new EventSource[]{new APIGatewayProxyEventSource(), new S3EventSource(), new DefaultEventSource()};
+    eventSource = new EventSource[]{new APIGatewayProxyEventSource(), new S3EventSource(), new SQSEventSource(), new DefaultEventSource()};
   }
 
   @Override
   public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context) throws IOException {
-    try ( OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8")) {
+    try (OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8")) {
       JsonObject requestJson = new JsonObject(Buffer.buffer(ByteStreams.toByteArray(inputStream)));
       log.debug(() -> requestJson.toString());
       String resp = handleMessage(requestJson).blockingGet();
@@ -101,7 +102,7 @@ public class AWSLambda implements RequestStreamHandler {
 
   protected JsonObject sanatizeResponse(JsonObject pResp) {
     Preconditions.checkNotNull(pResp);
-
+    
     Set<String> keys = new HashSet<>(pResp.fieldNames());
 
     keys

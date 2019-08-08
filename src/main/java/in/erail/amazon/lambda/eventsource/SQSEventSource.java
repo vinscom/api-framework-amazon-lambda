@@ -11,11 +11,11 @@ import java.util.Optional;
  *
  * @author vinay
  */
-public class S3EventSource implements EventSource {
+public class SQSEventSource implements EventSource {
 
-  public static final String S3_URL = "/aws/s3";
-  public static final String S3_ENV_NAME = "api.framework.lambda.s3.url";
-  private final String url = Util.getEnvironmentValue(S3_ENV_NAME, S3_URL);
+  public static final String SQS_URL = "/aws/sqs";
+  public static final String SQS_ENV_NAME = "api.framework.lambda.sqs.url";
+  private final String url = Util.getEnvironmentValue(SQS_ENV_NAME, SQS_URL);
 
   @Override
   public boolean check(JsonObject pEvent) {
@@ -24,13 +24,13 @@ public class S3EventSource implements EventSource {
                     .ofNullable(pEvent.getJsonArray("Records"))
                     .filter(o -> o.size() >= 1)
                     .map(o -> (JsonObject) o.iterator().next())
-                    .filter(o -> o.containsKey("eventSource") && "aws:s3".equals(o.getString("eventSource")))
+                    .filter(o -> o.containsKey("eventSource") && "aws:sqs".equals(o.getString("eventSource")))
                     .isPresent();
   }
 
   @Override
   public JsonObject transform(JsonObject pEvent) {
-
+    
     JsonObject newRequest = new JsonObject()
             .put("path", url)
             .put("httpMethod", "POST")
