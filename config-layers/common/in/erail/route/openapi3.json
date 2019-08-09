@@ -7,12 +7,8 @@
     "paths": {
         "/hello": {
             "get": {
-                "summary": "Get all session messages",
-                "description": "Return all session messages",
-                "operationId": "API_HELLO_GET",
                 "responses": {
                     "200": {
-                        "description": "Return all messages",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -22,9 +18,31 @@
                                     }
                                 }
                             }
+                        },
+                        "description": "Return all messages"
+                    }
+                },
+                "operationId": "API_HELLO_GET",
+                "summary": "Get data",
+                "description": "Get data"
+            },
+            "post": {
+                "requestBody": {
+                    "description": "Any Type",
+                    "content": {
+                        "*/*": {
+
                         }
                     }
-                }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "operationId": "API_HELLO_POST",
+                "summary": "Post data",
+                "description": "Get data"
             }
         }
     },

@@ -15,7 +15,7 @@ public interface EventSource {
             .ofNullable(pEvent.getJsonArray("Records"))
             .filter(o -> o.size() >= 1)
             .map(o -> (JsonObject) o.iterator().next())
-            .map(o -> Optional.ofNullable(o.getString("eventSource")).or(() -> Optional.ofNullable(o.getString("EventSource"))))
+            .map(o -> Optional.ofNullable(Optional.ofNullable(o.getString("eventSource")).orElseGet(() -> o.getString("EventSource"))))
             .filter(o -> o.isPresent() && getEventSourceName().event().equals(o.get()))
             .isPresent();
   }

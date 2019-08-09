@@ -6,8 +6,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import in.erail.amazon.lambda.eventsource.APIGatewayProxyEventSource;
+import in.erail.amazon.lambda.eventsource.CodeCommitEventSource;
 import in.erail.amazon.lambda.eventsource.DefaultEventSource;
+import in.erail.amazon.lambda.eventsource.DynamoDBEventSource;
+import in.erail.amazon.lambda.eventsource.KinesisEventSource;
 import in.erail.amazon.lambda.eventsource.S3EventSource;
+import in.erail.amazon.lambda.eventsource.SESEventSource;
+import in.erail.amazon.lambda.eventsource.SNSEventSource;
 import in.erail.amazon.lambda.eventsource.SQSEventSource;
 import in.erail.glue.Glue;
 import in.erail.glue.common.Util;
@@ -38,7 +43,7 @@ import org.apache.logging.log4j.Logger;
 public class AWSLambda implements RequestStreamHandler {
 
   protected Logger log = LogManager.getLogger(AWSLambda.class.getCanonicalName());
-  private static final String SERVICE_ENV = "service";
+  public static final String SERVICE_ENV = "service";
   private final RESTService mService;
   private EventSource[] eventSource;
   private final List<String> allowedFields = new ArrayList<>();
@@ -59,7 +64,17 @@ public class AWSLambda implements RequestStreamHandler {
 
     mService = Glue.instance().resolve(component);
 
-    eventSource = new EventSource[]{new APIGatewayProxyEventSource(), new S3EventSource(), new SQSEventSource(), new DefaultEventSource()};
+    eventSource = new EventSource[]{
+      new APIGatewayProxyEventSource(), 
+      new S3EventSource(), 
+      new SQSEventSource(), 
+      new SNSEventSource(),
+      new SESEventSource(),
+      new KinesisEventSource(),
+      new DynamoDBEventSource(),
+      new CodeCommitEventSource(),
+      new DefaultEventSource()
+    };
   }
 
   @Override
@@ -81,6 +96,7 @@ public class AWSLambda implements RequestStreamHandler {
             .firstElement()
             .map(e -> e.transform(pRequest))
             .map(reqJson -> reqJson.mapTo(getService().getRequestEventClass()))
+            .doOnSuccess(e -> e.setIsBase64Encoded(false))
             .doOnSuccess(this::populateSystemProperties)
             .flatMap(req -> getService().handleEvent(getService().createEvent(req)))
             .toSingle(new Event())
