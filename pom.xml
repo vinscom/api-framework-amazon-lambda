@@ -130,12 +130,12 @@
         <dependency>
             <groupId>in.erail</groupId>
             <artifactId>api-framework</artifactId>
-            <version>${project.version}</version>
+            <version>2.5.1</version>
         </dependency>
         <dependency>
             <groupId>in.erail</groupId>
             <artifactId>api-framework</artifactId>
-            <version>${project.version}</version>
+            <version>2.5.1</version>
             <classifier>common-config</classifier>
             <type>zip</type>
         </dependency>
