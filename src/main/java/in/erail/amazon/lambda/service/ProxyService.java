@@ -107,7 +107,7 @@ public class ProxyService extends RESTServiceImpl {
     //Send Request
     return clientRequest
             .rxSendBuffer(Buffer.buffer(body))
-            .map((resp) -> {
+            .flatMapMaybe((resp) -> {
               ResponseEvent responseEvent = pEvent.getResponse();
 
               //Add Headers
@@ -125,10 +125,13 @@ public class ProxyService extends RESTServiceImpl {
                       .ofNullable(resp.body())
                       .ifPresent(b -> responseEvent.setBody(b.getBytes()));
 
-              return pEvent;
+              if (resp.statusCode() >= 400 && resp.statusCode() <= 599) {
+                return Maybe.error(new RuntimeException(responseEvent.toString()));
+              }
+
+              return Maybe.just(pEvent);
             })
-            .doOnSuccess(e -> getLog().debug(() -> e.toString()))
-            .toMaybe();
+            .doOnSuccess(e -> getLog().debug(() -> e.toString()));
 
   }
 
