@@ -14,4 +14,4 @@
 
 ![Event Source](doc/AWSEventSourcing.jpg)
 
-Covert your app into AWS Lambda event sourcing app without any code change.
+Convert your app into AWS Lambda event sourcing app without any code change.
