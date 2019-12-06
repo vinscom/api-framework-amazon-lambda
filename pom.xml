@@ -16,7 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <vertx.version>3.8.3</vertx.version>
+        <vertx.version>3.8.4</vertx.version>
         <api.framework.version>${project.version}</api.framework.version>
         <layer.api.framework>${settings.localRepository}/in/erail/api-framework/${api.framework.version}/api-framework-${api.framework.version}-common-config.zip</layer.api.framework>
         <layer.api.framework.lambda.common>${project.basedir}/config-layers/common</layer.api.framework.lambda.common>
@@ -53,7 +53,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>3.1.0</version>
+                        <version>3.2.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -182,7 +182,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.1.1</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>commong-config</id>
