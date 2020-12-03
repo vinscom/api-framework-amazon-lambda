@@ -14,7 +14,7 @@
     <properties>
         <argLine></argLine>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vertx.version>3.8.5</vertx.version>
+        <vertx.version>3.9.4</vertx.version>
         <api.framework.version>${project.version}</api.framework.version>
         <layer.api.framework>${settings.localRepository}/in/erail/api-framework/${api.framework.version}/api-framework-${api.framework.version}-common-config.zip</layer.api.framework>
         <layer.api.framework.lambda.common>${project.basedir}/config-layers/common</layer.api.framework.lambda.common>
@@ -64,7 +64,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.1.1</version>
+                        <version>3.2.0</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -119,12 +119,12 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-core</artifactId>
-            <version>1.2.0</version>
+            <version>1.2.1</version>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-events</artifactId>
-            <version>2.2.7</version>
+            <version>3.6.0</version>
         </dependency>
         <dependency>
             <groupId>in.erail</groupId>
@@ -141,7 +141,7 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-lambda-java-log4j2</artifactId>
-            <version>1.1.0</version>
+            <version>1.2.0</version>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
@@ -152,13 +152,13 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <version>5.6.0</version>
+            <version>5.7.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.6.0</version>
+            <version>5.7.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -180,7 +180,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>commong-config</id>
@@ -199,7 +199,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.5</version>
+                <version>0.8.6</version>
                 <executions>
                     <execution>
                         <id>pre-unit-test</id>
